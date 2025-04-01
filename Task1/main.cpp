@@ -5,6 +5,8 @@ using namespace std;
 
 #define MAX_SIZE 100
 #define INPUT_SIZE 20000
+
+bool isDigit(char a);
 // Node for the doubly linked list
 struct ListNode {
     char value;
@@ -73,13 +75,51 @@ public:
         return value; // Return the value of the removed node
     }
 
+    int toIntHelper(ListNode* node, int mult, int* value) {
+        if (!node) return 0; // Base case: if node is null, return 0
+        if (isDigit(node->value)) {
+            *value += (node->value - '0') * mult; // Convert char to int
+        }
+        if (node->value == '-') {
+            *value *= -1;
+        }
+        toIntHelper(node -> next, mult * 10, value);
+        return *value;
+    }
+
+    int toInt() {
+        if (!head) return 0; // Handle empty list case
+        int value = 0;
+        return toIntHelper(head, 1, &value); // Start recursion from the head with multiplier 1
+    }
+
     void print() {
-        ListNode* current = head;
+        ListNode* current = tail; // Start from the tail
         while (current) {
-            cout << current->value << " "; // Print the value of the current node
-            current = current->next;      // Move to the next node
+            cout << current->value; // Print the value of the current node
+            current = current->prev; // Move to the previous node
         }
         cout << endl; // End the line after printing all nodes
+    }
+
+    void append(List* other) {
+        if (!other || !other->head) {
+            return; // If the other list is empty, do nothing
+        }
+    
+        if (!head) {
+            // If the current list is empty, copy the other list
+            head = other->head;
+            tail = other->tail;
+            return;
+        }
+    
+        // Connect the tail of the current list to the head of the other list
+        tail->next = other->head;
+        other->head->prev = tail;
+    
+        // Update the tail of the current list
+        tail = other->tail;
     }
 };
 
@@ -160,9 +200,7 @@ public:
             this->push(list2);
         }
     }
-
     
-
     void printRecursion(StackNode* node, int* count) {
         if (!node) {
             return; // Base case: stop when the node is null
@@ -208,6 +246,25 @@ public:
             addToList('0');
         }
     }
+
+    List* listAtPositionHelper(StackNode* node, int position, int currentIndex) {
+        if (!node) {
+            cout << "Error: Position " << position << " is out of bounds!" << endl;
+            return nullptr; // Base case: if the node is null, return nullptr
+        }
+        if (currentIndex == position) {
+            return node->list; // Base case: if the current index matches the position, return the list
+        }
+        return listAtPositionHelper(node->prev, position, currentIndex + 1); // Recursive call to the previous node
+    }
+
+    List* listAtPosition(int position) {
+        return listAtPositionHelper(top, position, 0);
+    }
+
+    void append(List* list) {
+        top->list->append(list);
+    }
 };
 
 bool readInputFromFile(const string& filename, char* input) {
@@ -221,7 +278,20 @@ bool readInputFromFile(const string& filename, char* input) {
     inputFile.close(); // Close the file
     return true; // Return true if the input was successfully read
 }
+// to fix
+void toListHelper(int val, List* list) {
+    
+    return toListHelper(val/10, list);
+    list->push_back((val%10) + '0');
+    if(val == 0) return;
+}
 
+List* toList(int val) {
+    List* list = new List;
+    toListHelper(val, list);
+    return list;
+
+}
 
 bool isDigit(char a) {
     if(a >= '0' && a <='9') return true;
@@ -240,70 +310,107 @@ void process(char *input, Stack* stack, int* instr_count) {
         (*instr_count)++;
         char a;
         switch(*input) {
+            //done
             case '\'':
             stack->push();
             break;
+            //done
             case ',':
             stack->pop();
             break;
+            //done
             case ':':
             stack->push(stack->getTop()->list);
             break;
+            //done
             case ';': 
             stack->swapTop();
             break;
-            case '@':
-
-            break;
+            //done
+            case '@':{
+                int position = stack->pop()->toInt();
+                List * list = stack->listAtPosition(position);
+                stack->push(list);
+                break;
+            }
+            //done
             case '.':
             cin>>a;
             stack->addToList(a);
             break;
+            //done
             case '>':
             cout << stack->pop()->head->value << endl;
             break;
+            //done
             case '!': 
             stack->negate();
             break;
-            case '<':
-
-            break;
-            case '=':
-
-            break;
+            //done
+            case '<': {
+                int a = stack->pop()->toInt();
+                int b = stack->pop()->toInt();
+                stack->push();
+                if(b<a) stack->addToList('1');
+                else stack->addToList('0');
+                break;
+            } 
+            //done
+            case '=': {
+                int a = stack->pop()->toInt();
+                int b = stack->pop()->toInt();
+                stack->push();
+                if(b==a) stack->addToList('1');
+                else stack->addToList('0');
+                break;
+            }  
+            //done
             case '~':
             stack->push();
             stack->addToList(*(instr_count) + '0');
             break;
+            //not
             case '?':
 
             break;
+            //done
             case '-':
-
+            if(isDigit(*(input + 1))) stack->addToList(*input);
             break;
+            //done
             case '^':
-            if(stack->getTop()->list->tail->value == '6') { // change for '-'
+            if(stack->getTop()->list->tail->value == '-') { // change for '-'
                 stack->getTop()->list->popTail();
             }
             break;
+            //done
             case '$':
             a = stack->getTop()->list->pop();
             stack->push();
             stack->addToList(a);
-
             break;
-            case '#':
-
+            //done
+            case '#': {
+                List* list = stack->pop();
+                stack->append(list);
+            }
             break;
-            case '+':
-
-            break;
+            //to fix
+            case '+': {
+                int a = stack->pop()->toInt();
+                int b = stack->pop()->toInt();
+                stack->push(toList(a+b));
+                break;
+            }
+            //done
             case '&':
             stack->print();
             break;
+            //not
             case ']':
 
             break;
+            //not
             case '[':
 
             break;
@@ -324,6 +431,7 @@ int main() {
     //cout << input;
     process(input, stack, &instr_count);
     stack->print();
+    cout << stack->getTop()->list->toInt();
     
 
     return 0;
