@@ -85,15 +85,20 @@ public:
     }
 
     void printHelper(ListNode* node) {
-        if(!node) {
-            cout << endl;
+        if (!node) {
             return;
         }
         cout << node->value;
         printHelper(node->next);
     }
+
     void print() {
+        if (!head) {
+            cout << endl;
+            return;
+        }
         printHelper(head);
+        cout << endl;
     }
 
     void append(List* other) {
@@ -296,7 +301,7 @@ bool isDigit(char a) {
 }
 
 void process(char* input, Stack* stack, int* instr_count) {
-    if (*input == '\0') return;
+    while (*input != '\0') {
 
     (*instr_count)++;
     char a;
@@ -347,9 +352,25 @@ void process(char* input, Stack* stack, int* instr_count) {
             stack->push();
             stack->addToList(*(instr_count) + '0');
             break;
-            // case '?':
-
-            // break;
+        case '?': {
+            int T = stack->pop()->toInt();
+            List* W = stack->pop();            
+            bool isNonZero = false;
+            ListNode* current = W->head;
+            while (current) {
+                if (current->value != '0') {
+                    isNonZero = true;
+                    break;
+                }
+                current = current->next;
+            }
+            if (isNonZero) {
+                *instr_count = T - 1; 
+            }
+        
+            delete W; 
+            break;
+        }
         case '-':
             if (isDigit(*(input + 1))) {
                 stack->addToList(*input);
@@ -404,9 +425,10 @@ void process(char* input, Stack* stack, int* instr_count) {
             stack->addToList(*input);
             (*instr_count)--;
             break;
+        
     }
-
-    process(input + 1, stack, instr_count);
+    input += 1;
+    }
 }
 
 int main() {
