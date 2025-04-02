@@ -84,13 +84,16 @@ public:
         return toIntHelper(head, 1, &value);
     }
 
-    void print() {
-        ListNode* current = tail;
-        while (current) {
-            cout << current->value;
-            current = current->prev;
+    void printHelper(ListNode* node) {
+        if(!node) {
+            cout << endl;
+            return;
         }
-        cout << endl;
+        cout << node->value;
+        printHelper(node->next);
+    }
+    void print() {
+        printHelper(head);
     }
 
     void append(List* other) {
@@ -191,13 +194,9 @@ public:
         (*count)++;
         printHelper(node->prev, count);
         
-        ListNode* listCurrent = node->list->head;
+        List* list = node->list;
         cout << (*count)-- << ": ";
-        while (listCurrent) {
-            cout << listCurrent->value;
-            listCurrent = listCurrent->next;
-        }
-        cout << endl;
+        list->print();
     }
 
     void print() {
