@@ -7,7 +7,7 @@ using namespace std;
 #define INPUT_SIZE 20000
 
 bool isDigit(char a);
-// Node for the doubly linked list
+
 struct ListNode {
     char value;
     ListNode* prev;
@@ -16,7 +16,7 @@ struct ListNode {
     ListNode(char val) : value(val), prev(nullptr), next(nullptr) {}
 };
 
-// Doubly linked list class
+
 class List {
 public:
     ListNode* head;
@@ -36,94 +36,82 @@ public:
     }
 
     char pop() {
-        if (!head) {
-            cout << "List is empty!" << endl;
-            return '\0'; // Return a null character if the list is empty
-        }
-
-        ListNode* temp = head; // Save the current head
-        char value = temp->value; // Save the value of the head node
-        head = head->next; // Move the head pointer to the next node
+        ListNode* temp = head;
+        char value = temp->value;
+        head = head->next;
 
         if (head) {
-            head->prev = nullptr; // Disconnect the new head from the old head
+            head->prev = nullptr; 
         } else {
-            tail = nullptr; // If the list becomes empty, set tail to nullptr
+            tail = nullptr; 
         }
 
-        delete temp; // Delete the old head node
-        return value; // Return the value of the removed node
+        delete temp; 
+        return value;
     }
 
     char popTail() {
-        if (!tail) {
-            cout << "List is empty!" << endl;
-            return '\0'; // Return a null character if the list is empty
-        }
-
-        ListNode* temp = tail; // Save the current tail
-        char value = temp->value; // Save the value of the tail node
-        tail = tail->prev; // Move the tail pointer to the previous node
+        if(!tail) return '0';
+        ListNode* temp = tail;
+        char value = temp->value;
+        tail = tail->prev;
 
         if (tail) {
-            tail->next = nullptr; // Disconnect the new tail from the old tail
+            tail->next = nullptr;
         } else {
-            head = nullptr; // If the list becomes empty, set head to nullptr
+            head = nullptr;
         }
 
-        delete temp; // Delete the old tail node
-        return value; // Return the value of the removed node
+        delete temp;
+        return value;
     }
 
     int toIntHelper(ListNode* node, int mult, int* value) {
-        if (!node) return 0; // Base case: if node is null, return 0
-        if (isDigit(node->value)) {
-            *value += (node->value - '0') * mult; // Convert char to int
-        }
+        if (!node) return *value; 
         if (node->value == '-') {
             *value *= -1;
+            return *value;
         }
-        toIntHelper(node -> next, mult * 10, value);
-        return *value;
+        if (isDigit(node->value)) {
+            *value += (node->value - '0') * mult;
+        }
+        return toIntHelper(node->next, mult * 10, value);
     }
 
     int toInt() {
-        if (!head) return 0; // Handle empty list case
+        if (!head) return 0;
         int value = 0;
-        return toIntHelper(head, 1, &value); // Start recursion from the head with multiplier 1
+        return toIntHelper(head, 1, &value);
     }
 
     void print() {
-        ListNode* current = tail; // Start from the tail
+        ListNode* current = tail;
         while (current) {
-            cout << current->value; // Print the value of the current node
-            current = current->prev; // Move to the previous node
+            cout << current->value;
+            current = current->prev;
         }
-        cout << endl; // End the line after printing all nodes
+        cout << endl;
     }
 
     void append(List* other) {
         if (!other || !other->head) {
-            return; // If the other list is empty, do nothing
+            return;
         }
     
         if (!head) {
-            // If the current list is empty, copy the other list
             head = other->head;
             tail = other->tail;
             return;
         }
     
-        // Connect the tail of the current list to the head of the other list
         tail->next = other->head;
         other->head->prev = tail;
     
-        // Update the tail of the current list
         tail = other->tail;
     }
 };
 
-// Node for the stack of doubly linked lists
+
 struct StackNode {
     List* list;
     StackNode* prev;
@@ -132,7 +120,6 @@ struct StackNode {
     StackNode() : list(new List()), prev(nullptr), next(nullptr) {}
 };
 
-// Stack of doubly linked lists class
 class Stack {
 private:
     StackNode* top;
@@ -165,26 +152,17 @@ public:
     }
 
     List* pop() {
-        if (!top) {
-            cout << "Stack is empty!" << endl;
-            return nullptr; // Return nullptr if the stack is empty
-        }
-    
         StackNode* temp = top;
-        List* poppedList = temp->list; // Save the list to return later
+        List* list = temp->list;
         top = top->prev;
         if (top) {
             top->next = nullptr;
         }
-        delete temp; // Delete the StackNode, but not the list
-        return poppedList; // Return the popped list
+        delete temp;
+        return list;
     }
 
     void addToList(char val) {
-        if (!top) {
-            cout << "Stack is empty! Push a list first." << endl;
-            return;
-        }
         top->list->push_back(val);
     }
 
@@ -200,16 +178,19 @@ public:
             this->push(list2);
         }
     }
+
+    bool isTopNegative() {
+        if(!top->list->tail) return false;
+        return top->list->tail->value == '-';
+    }
     
-    void printRecursion(StackNode* node, int* count) {
+    void printHelper(StackNode* node, int* count) {
         if (!node) {
-            return; // Base case: stop when the node is null
+            return;
         }
-        // Recursive call to the previous node
         (*count)++;
-        printRecursion(node->prev, count);
+        printHelper(node->prev, count);
         
-        // Print the current list after recursion unwinds
         ListNode* listCurrent = node->list->head;
         cout << (*count)-- << ": ";
         while (listCurrent) {
@@ -221,18 +202,18 @@ public:
 
     void print() {
         int count = -1;
-        printRecursion(top, &count);
+        printHelper(top, &count);
     }
 
     char listTop() {
         return top->list->head->value;
     }
-    bool isTopEmpty(){
-        if(getTop()->list->head == nullptr) return true;
+    bool isTopEmpty() {
+        if (getTop()->list->head == nullptr) return true;
         else return false;
     }
     void negate() {
-        if (isTopEmpty()) { //change for isEmpty()
+        if (isTopEmpty()) {
             pop();
             push();
             addToList('1');
@@ -249,13 +230,13 @@ public:
 
     List* listAtPositionHelper(StackNode* node, int position, int currentIndex) {
         if (!node) {
-            cout << "Error: Position " << position << " is out of bounds!" << endl;
-            return nullptr; // Base case: if the node is null, return nullptr
+            cerr << "Error: Position " << position << " is out of bounds!" << endl;
+            return nullptr;
         }
         if (currentIndex == position) {
-            return node->list; // Base case: if the current index matches the position, return the list
+            return node->list;
         }
-        return listAtPositionHelper(node->prev, position, currentIndex + 1); // Recursive call to the previous node
+        return listAtPositionHelper(node->prev, position, currentIndex + 1);
     }
 
     List* listAtPosition(int position) {
@@ -270,169 +251,172 @@ public:
 bool readInputFromFile(const string& filename, char* input) {
     ifstream inputFile(filename); // Open the file
     if (!inputFile) {
-        cout << "Error: Could not open input file!" << endl;
+        cerr << "Error: Could not open input file: " << filename << endl;
         return false; // Return false if the file could not be opened
     }
 
     inputFile.getline(input, INPUT_SIZE); // Read the input from the file
+    if (inputFile.fail()) {
+        cerr << "Error: Failed to read input from file: " << filename << endl;
+        inputFile.close();
+        return false;
+    }
+
     inputFile.close(); // Close the file
     return true; // Return true if the input was successfully read
 }
-// to fix
+
 void toListHelper(int val, List* list) {
-    
-    return toListHelper(val/10, list);
-    list->push_back((val%10) + '0');
-    if(val == 0) return;
+    if (val == 0) return;
+    toListHelper(val / 10, list); 
+    list->push_back((val % 10) + '0');
 }
 
 List* toList(int val) {
     List* list = new List;
-    toListHelper(val, list);
-    return list;
 
+    if (val == 0) {
+        list->push_back('0');
+        return list;
+    }
+
+    if (val < 0) {
+        list->push_back('-');
+        val = -val;
+        toListHelper(val, list);
+    } else {
+        toListHelper(val, list);
+    }
+
+    return list;
 }
 
 bool isDigit(char a) {
-    if(a >= '0' && a <='9') return true;
+    if (a >= '0' && a <= '9') return true;
     else return false;
 }
 
-void process(char *input, Stack* stack, int* instr_count) {
-    if (*input == '\0') { 
+void process(char* input, Stack* stack, int* instr_count) {
+    if (*input == '\0') return;
 
-        return;
-    }
-    if(isDigit(*input)) {
-        stack->addToList(*input);
-    }
-    else {
-        (*instr_count)++;
-        char a;
-        switch(*input) {
-            //done
-            case '\'':
+    (*instr_count)++;
+    char a;
+    switch (*input) {
+        case '\'':
             stack->push();
             break;
-            //done
-            case ',':
+        case ',':
             stack->pop();
             break;
-            //done
-            case ':':
+        case ':':
             stack->push(stack->getTop()->list);
             break;
-            //done
-            case ';': 
+        case ';':
             stack->swapTop();
             break;
-            //done
-            case '@':{
-                int position = stack->pop()->toInt();
-                List * list = stack->listAtPosition(position);
-                stack->push(list);
-                break;
-            }
-            //done
-            case '.':
-            cin>>a;
+        case '@': {
+            int position = stack->pop()->toInt();
+            List* list = stack->listAtPosition(position);
+            stack->push(list);
+            break;
+        }
+        case '.':
+            cin >> a;
             stack->addToList(a);
             break;
-            //done
-            case '>':
-            cout << stack->pop()->head->value << endl;
+        case '>':
+            cout << stack->pop()->head->value;
             break;
-            //done
-            case '!': 
+        case '!':
             stack->negate();
             break;
-            //done
-            case '<': {
-                int a = stack->pop()->toInt();
-                int b = stack->pop()->toInt();
-                stack->push();
-                if(b<a) stack->addToList('1');
-                else stack->addToList('0');
-                break;
-            } 
-            //done
-            case '=': {
-                int a = stack->pop()->toInt();
-                int b = stack->pop()->toInt();
-                stack->push();
-                if(b==a) stack->addToList('1');
-                else stack->addToList('0');
-                break;
-            }  
-            //done
-            case '~':
+        case '<': {
+            int a = stack->pop()->toInt();
+            int b = stack->pop()->toInt();
+            stack->push();
+            stack->addToList(b < a ? '1' : '0');
+            break;
+        }
+        case '=': {
+            int a = stack->pop()->toInt();
+            int b = stack->pop()->toInt();
+            stack->push();
+            stack->addToList(b == a ? '1' : '0');
+            break;
+        }
+        case '~':
             stack->push();
             stack->addToList(*(instr_count) + '0');
             break;
-            //not
-            case '?':
+            // case '?':
 
-            break;
-            //done
-            case '-':
-            if(isDigit(*(input + 1))) stack->addToList(*input);
-            break;
-            //done
-            case '^':
-            if(stack->getTop()->list->tail->value == '-') { // change for '-'
-                stack->getTop()->list->popTail();
+            // break;
+        case '-':
+            if (isDigit(*(input + 1))) {
+                stack->addToList(*input);
+                instr_count--;
+            } else {
+                if (stack->isTopNegative()) {
+                    stack->getTop()->list->popTail();
+                } else {
+                    List* list = new List;
+                    list->push_back('-');
+                    stack->append(list);
+                }
             }
             break;
-            //done
-            case '$':
+        case '^':
+        if (stack->isTopNegative()) {
+            stack->getTop()->list->popTail();
+        }
+            break;
+        case '$':
             a = stack->getTop()->list->pop();
             stack->push();
             stack->addToList(a);
             break;
-            //done
-            case '#': {
-                List* list = stack->pop();
-                stack->append(list);
-            }
+        case '#': {
+            List* list = stack->pop();
+            stack->append(list);
             break;
-            //to fix
-            case '+': {
-                int a = stack->pop()->toInt();
-                int b = stack->pop()->toInt();
-                stack->push(toList(a+b));
-                break;
-            }
-            //done
-            case '&':
+        }
+        case '+': {
+            int a = stack->pop()->toInt();
+            int b = stack->pop()->toInt();
+            stack->push(toList(a + b));
+            break;
+        }
+        case '&':
             stack->print();
             break;
-            //not
-            case ']':
-
+        case ']': {
+            int ascii = stack->pop()->toInt();
+            stack->push();
+            stack->addToList(ascii);
             break;
-            //not
-            case '[':
-
-            break;
-            
         }
-        
+        case '[': {
+            List* list = stack->pop();
+            List* ascii = toList(list->head->value);
+            stack->push(ascii);
+            break;
+        }
+        default:
+            stack->addToList(*input);
+            (*instr_count)--;
+            break;
     }
-    process(input + 1, stack, instr_count);
-    
-}
 
+    process(input + 1, stack, instr_count);
+}
 
 int main() {
     char input[INPUT_SIZE];
     Stack* stack = new Stack;
     int instr_count = 0;
-    if(!readInputFromFile("input.txt", input)) return 1;
-    //cout << input;
+    // cin>>input;
+    if (!readInputFromFile("input.txt", input)) return 1;
     process(input, stack, &instr_count);
-    stack->print();
-    cout << stack->getTop()->list->toInt();
-    
 
     return 0;
 }
