@@ -24,6 +24,24 @@ public:
 
     List() : head(nullptr), tail(nullptr) {}
 
+    List(const List& other) : head(nullptr), tail(nullptr) {
+        if (other.head) {
+            head = new ListNode(other.head->value);
+            copyNodes(head, other.head->next);
+        }
+    }
+    
+    void copyNodes(ListNode* current, ListNode* otherNode) {
+        if (!otherNode) {
+            tail = current;
+            return;
+        }
+    
+        current->next = new ListNode(otherNode->value);
+        current->next->prev = current;
+        copyNodes(current->next, otherNode->next);
+    }
+
     void push_back(char val) {
         ListNode* newNode = new ListNode(val);
         if (!head) {
@@ -99,6 +117,51 @@ public:
         }
         printHelper(head);
         cout << endl;
+    }
+
+    void cutZerosHelper(ListNode* node) {
+        if(!node) return;
+        
+        if(node->value == '0' && node->prev){
+            popTail();
+            cutZerosHelper(node->prev);
+        }
+    }
+    void cutZeros() {
+        if(!tail) return;
+        bool neg = false;
+        if(tail->value == '-') {
+            popTail();
+            neg = true;
+        }
+        cutZerosHelper(tail);
+        if(neg) {
+
+            List* temp = new List;
+            temp->push_back('-');
+            append(temp);
+            delete temp;
+        }
+    }
+
+    bool isEqual(List* other) {
+        if (!other) return false;
+        cutZeros();
+        other->cutZeros();
+        return isEqualHelper(head, other->head);
+    }
+
+    bool isEqualHelper(ListNode* a, ListNode* b) {
+        if (!a && !b) {
+            return true;
+        }
+        if(!a || !b) {
+            return false;
+        }
+        if (a->value != b->value) {
+            return false;
+        }
+        return isEqualHelper(a->next, b->next);
     }
 
     void append(List* other) {
@@ -199,9 +262,8 @@ public:
         (*count)++;
         printHelper(node->prev, count);
         
-        List* list = node->list;
         cout << (*count)-- << ": ";
-        list->print();
+        node->list->print();
     }
 
     void print() {
@@ -301,20 +363,22 @@ bool isDigit(char a) {
 }
 
 void process(char* input, Stack* stack, int* instr_count) {
-    while (*input != '\0') {
-
+    if(*(input) == '\0') return;
     (*instr_count)++;
     char a;
     switch (*input) {
         case '\'':
             stack->push();
             break;
-        case ',':
+        case ',': {
             stack->pop();
             break;
-        case ':':
-            stack->push(stack->getTop()->list);
+        }
+        case ':': {
+            List* list = new List(*(stack->getTop()->list));
+            stack->push(list);
             break;
+        }
         case ';':
             stack->swapTop();
             break;
@@ -329,7 +393,7 @@ void process(char* input, Stack* stack, int* instr_count) {
             stack->addToList(a);
             break;
         case '>':
-            cout << stack->pop()->head->value;
+            cout << stack->pop()->pop();
             break;
         case '!':
             stack->negate();
@@ -342,10 +406,13 @@ void process(char* input, Stack* stack, int* instr_count) {
             break;
         }
         case '=': {
-            int a = stack->pop()->toInt();
-            int b = stack->pop()->toInt();
+            List* a = stack->pop();
+            List* b = stack->pop();
+            
             stack->push();
-            stack->addToList(b == a ? '1' : '0');
+            stack->addToList(a->isEqual(b) ? '1' : '0');
+            delete a;
+            delete b;
             break;
         }
         case '~':
@@ -426,8 +493,8 @@ void process(char* input, Stack* stack, int* instr_count) {
             break;
         
     }
-    input += 1;
-    }
+    process(input + 1, stack, instr_count);
+    
 }
 
 int main() {
