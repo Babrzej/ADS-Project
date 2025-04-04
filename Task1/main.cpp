@@ -210,7 +210,7 @@ public:
     }
 
     char listTop() {
-        return top->list->head->value;
+        return top->list->tail->value;
     }
     bool isTopEmpty() {
         if (getTop()->list->head == nullptr) return true;
@@ -349,8 +349,7 @@ void process(char* input, Stack* stack, int* instr_count) {
             break;
         }
         case '~':
-            stack->push();
-            stack->addToList(*(instr_count) + '0');
+            stack->push(toList(*(instr_count)));
             break;
         case '?': {
             int T = stack->pop()->toInt();
