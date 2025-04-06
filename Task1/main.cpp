@@ -119,12 +119,13 @@ public:
         cout << endl;
     }
 
-    void cutZerosHelper(ListNode* node) {
-        if(!node) return;
-        
-        if(node->value == '0' && node->prev){
+    void cutZerosHelper() {
+        if (!tail) {
+            return;
+        }
+        if (tail->value == '0') {
             popTail();
-            cutZerosHelper(node->prev);
+            cutZerosHelper();
         }
     }
     void cutZeros() {
@@ -134,7 +135,11 @@ public:
             popTail();
             neg = true;
         }
-        cutZerosHelper(tail);
+        if(tail) cutZerosHelper();
+        if (!head) {
+            push_back('0');
+            neg = false;
+        }
         if(neg) {
 
             List* temp = new List;
@@ -148,7 +153,14 @@ public:
         if (!other) return false;
         cutZeros();
         other->cutZeros();
+        if(length() < 10 && other->length() < 10) {
+            return toInt() == other->toInt();
+        }
+        else {
+        //print();
+        //other->print();
         return isEqualHelper(head, other->head);
+        }
     }
 
     bool isEqualHelper(ListNode* a, ListNode* b) {
@@ -162,6 +174,55 @@ public:
             return false;
         }
         return isEqualHelper(a->next, b->next);
+    }
+
+    bool isSmaller(List* other) {
+        if (!other) return false;
+        cutZeros();
+        other->cutZeros();
+        if(length() < 10 && other->length() < 10) {
+            //cout << toInt() << endl << other->toInt() << endl;
+            return toInt() < other->toInt();
+        }
+        else {
+        ListNode* a = tail;
+        ListNode* b = other->tail;
+        if(a->value == '-' && b->value == '-') return isBiggerHelper(a->prev, b->prev);
+        if(a->value == '-') return true;
+        if(b->value == '-') return false;
+        if(length() < other->length()) return true;
+        if(length() > other->length()) return false;
+        return isSmallerHelper(a, b);
+        }
+    }
+
+    bool isSmallerHelper(ListNode* a, ListNode* b) {
+        if (!a && !b) return false;
+        if(a->value > b->value) return false;
+        if (a->value < b->value) return true;
+        return isSmallerHelper(a->prev, b->prev);
+    }
+
+    bool isBiggerHelper(ListNode* a, ListNode* b) {
+        if (!a && !b) {
+            return true;
+        }
+        if(b->value > a->value) return false;
+        return isBiggerHelper(a->prev, b->prev);
+    }
+
+    int getLength(ListNode* node) {
+        if (!node) return 0;
+        return 1 + getLength(node->next);
+    }
+    
+    int length() {
+        return getLength(head);
+    }
+
+    bool isEmpty() {
+        if(head == nullptr) return true;
+        else return false;
     }
 
     void append(List* other) {
@@ -362,11 +423,14 @@ bool isDigit(char a) {
     else return false;
 }
 
+
 void process(char* input, Stack* stack, int* instr_count) {
-    if(*(input) == '\0') return;
-    (*instr_count)++;
-    char a;
-    switch (*input) {
+    char current = *(input + *instr_count);
+    if(current == '\0') {
+        return;
+    }
+    
+    switch (current) {
         case '\'':
             stack->push();
             break;
@@ -388,10 +452,12 @@ void process(char* input, Stack* stack, int* instr_count) {
             stack->push(list);
             break;
         }
-        case '.':
+        case '.': {
+            char a;
             cin >> a;
             stack->addToList(a);
             break;
+        }
         case '>':
             cout << stack->pop()->pop();
             break;
@@ -399,10 +465,13 @@ void process(char* input, Stack* stack, int* instr_count) {
             stack->negate();
             break;
         case '<': {
-            int a = stack->pop()->toInt();
-            int b = stack->pop()->toInt();
+            List* a = stack->pop();
+            List* b = stack->pop();
+            
             stack->push();
-            stack->addToList(b < a ? '1' : '0');
+            stack->addToList(b->isSmaller(a) ? '1' : '0');
+            delete a;
+            delete b;
             break;
         }
         case '=': {
@@ -419,28 +488,16 @@ void process(char* input, Stack* stack, int* instr_count) {
             stack->push(toList(*(instr_count)));
             break;
         case '?': {
-            int T = stack->pop()->toInt();
-            List* W = stack->pop();            
-            bool isNonZero = false;
-            ListNode* current = W->head;
-            while (current) {
-                if (current->value != '0') {
-                    isNonZero = true;
-                    break;
-                }
-                current = current->next;
+            int t = stack->pop()->toInt();
+            List* w = stack->pop();
+            if(!w->isEmpty() && !(w && w->length() == 1 && w->head->value == '0')) {
+                *instr_count = t-1;
             }
-            if (isNonZero) {
-                *instr_count = T - 1; 
-            }
-        
-            delete W; 
             break;
         }
         case '-':
-            if (isDigit(*(input + 1))) {
-                stack->addToList(*input);
-                instr_count--;
+            if (isDigit(*(input + *instr_count + 1))) {
+                stack->addToList(current);
             } else {
                 if (stack->isTopNegative()) {
                     stack->getTop()->list->popTail();
@@ -456,11 +513,12 @@ void process(char* input, Stack* stack, int* instr_count) {
             stack->getTop()->list->popTail();
         }
             break;
-        case '$':
-            a = stack->getTop()->list->pop();
+        case '$': {
+            char a = stack->getTop()->list->pop();
             stack->push();
             stack->addToList(a);
             break;
+        }
         case '#': {
             List* list = stack->pop();
             stack->append(list);
@@ -488,12 +546,16 @@ void process(char* input, Stack* stack, int* instr_count) {
             break;
         }
         default:
-            stack->addToList(*input);
-            (*instr_count)--;
+            stack->addToList(current);
             break;
         
     }
-    process(input + 1, stack, instr_count);
+    
+    cout << *instr_count << ": " << *(input + *instr_count) << endl;
+    (*instr_count)++;
+
+    
+    process(input, stack, instr_count);
     
 }
 
