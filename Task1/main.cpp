@@ -208,7 +208,108 @@ public:
             return true;
         }
         if(b->value > a->value) return false;
+        if (b->value < a->value) return true;
         return isBiggerHelper(a->prev, b->prev);
+    }
+
+    void addHelper(ListNode* node1, ListNode* node2, bool carry) {
+        if (!node1 && !node2 && !carry) return; // Base case: stop when no nodes and no carry
+    
+        int a = 0, b = 0;
+    
+        // Get values from the nodes or use 0 if the node is null
+        if (node1) a = node1->value - '0';
+        if (node2) b = node2->value - '0';
+    
+        // Calculate the sum and the carry
+        int sum = a + b + (carry ? 1 : 0);
+        carry = sum >= 10; // Determine if there is a carry
+        sum %= 10;         // Keep only the last digit
+    
+        // Update the current node's value
+        if (node1) {
+            node1->value = sum + '0';
+        } else {
+            // If node1 is null, create a new node to store the result
+            ListNode* newNode = new ListNode(sum + '0');
+            tail->next = newNode;
+            newNode->prev = tail;
+            tail = newNode;
+        }
+    
+        // Recurse to the next nodes
+        addHelper(node1 ? node1->next : nullptr, node2 ? node2->next : nullptr, carry);
+    }
+
+    void add(List* other) {
+        // Handle negative numbers
+        if (isNegative() && other->isNegative()) {
+            popTail();
+            other->popTail();
+            add(other);
+            append('-');
+            return;
+        }
+        if (isNegative()) {
+            other->substract(this);
+            return;
+        }
+        if (other->isNegative()) {
+            substract(other);
+            return;
+        }
+    
+        // Perform addition
+        addHelper(head, other->head, false);
+    }
+
+    void substractHelper(ListNode* node1, ListNode* node2, bool borrow) {
+        if (!node1 && !node2 && !borrow) return; // Base case: stop when no nodes and no borrow
+    
+        int a = 0, b = 0;
+    
+        // Get values from the nodes or use 0 if the node is null
+        if (node1) a = node1->value - '0';
+        if (node2) b = node2->value - '0';
+    
+        // Apply the borrow if needed
+        if (borrow) {
+            a -= 1;
+            borrow = false;
+        }
+    
+        // If `a` is less than `b`, borrow from the next digit
+        if (a < b) {
+            a += 10;
+            borrow = true;
+        }
+    
+        // Calculate the result of the subtraction
+        int result = a - b;
+    
+        // Update the current node's value
+        if (node1) {
+            node1->value = result + '0';
+        } else {
+            // If node1 is null, create a new node to store the result
+            ListNode* newNode = new ListNode(result + '0');
+            tail->next = newNode;
+            newNode->prev = tail;
+            tail = newNode;
+        }
+    
+        // Recurse to the next nodes
+        substractHelper(node1 ? node1->next : nullptr, node2 ? node2->next : nullptr, borrow);
+    }
+
+    void substract(List* other) {
+        substractHelper(head, other->head, false);
+        cutZeros(); // Remove leading zeros
+    }
+    
+    bool isNegative() {
+        if(tail) return tail->value == '-';
+        return false;
     }
 
     int getLength(ListNode* node) {
@@ -240,6 +341,19 @@ public:
         other->head->prev = tail;
     
         tail = other->tail;
+    }
+
+    void append(char a) {
+        if(!head) {
+            head = new ListNode(a);
+            tail = head;
+            return;
+        }
+
+        ListNode* temp = new ListNode(a);
+        tail->next = temp;
+        temp->prev = tail;
+        tail = temp;
     }
 };
 
@@ -525,9 +639,10 @@ void process(char* input, Stack* stack, int* instr_count) {
             break;
         }
         case '+': {
-            int a = stack->pop()->toInt();
-            int b = stack->pop()->toInt();
-            stack->push(toList(a + b));
+            List* a = stack->pop();
+            List* b = stack->pop();
+            a->add(b);
+            stack->push(a);
             break;
         }
         case '&':
@@ -551,7 +666,7 @@ void process(char* input, Stack* stack, int* instr_count) {
         
     }
     
-    cout << *instr_count << ": " << *(input + *instr_count) << endl;
+    //cout << *instr_count << ": " << *(input + *instr_count) << endl;
     (*instr_count)++;
 
     
